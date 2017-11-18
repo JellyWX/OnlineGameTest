@@ -1,6 +1,8 @@
 from kivy.app import App
-from kivy.uix.widget import Widget
 from kivy.clock import Clock
+from kivy.properties import ObjectProperty
+from kivy.uix.widget import Widget
+from kivy.core.window import Window
 
 import socket
 import select
@@ -8,7 +10,16 @@ import sys
 import uuid
 
 
+class Player(Widget):
+  def __init__(self,*args,**kwargs):
+    super(Player,self).__init__(*args,**kwargs)
+
+
 class Content(Widget):
+  user = ObjectProperty(None)
+
+  keysdown = set([])
+
   def __init__(self,*args,**kwargs):
     super(Content,self).__init__(*args,**kwargs)
 
@@ -37,6 +48,15 @@ class Content(Widget):
 
     Clock.schedule_interval(self.get_network, 1.0/32)
 
+  def keyDown(self,window,key,*largs):
+    self.keysdown.add(key)
+
+  def keyUp(self,window,key,*largs):
+    self.keysdown.remove(key)
+
+  def catch_mouse(self,etype,pos):
+    self.mouse_pos = pos
+
   def get_network(self,t):
 
     readable, writable, exception = select.select([self.client], [], [], 0)
@@ -54,8 +74,14 @@ class Content(Widget):
       self.client.send('C!{}'.format(self.uuid).encode())
       self.sent_id = True
 
+
 class Main(App):
+  def on_start(self):
+    Window.bind(on_key_down=self.content.keyDown,on_key_up=self.content.keyUp,mouse_pos=self.content.catch_mouse)
+
   def build(self):
-    return Content()
+    self.content = Content()
+    return self.content
+
 
 Main().run()

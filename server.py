@@ -19,7 +19,6 @@ players = {}
 
 def main():
 
-  global socks, server
   while socks:
     time.sleep(1.0/64)
 

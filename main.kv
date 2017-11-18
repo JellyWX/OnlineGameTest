@@ -1,7 +1,22 @@
+<Player>:
+  canvas:
+    Color:
+      rgb: 1,0,0
+    Ellipse:
+      size: self.size
+      pos: self.pos
+
 <Content>:
+  user: user
+
   canvas:
     Color:
       rgb: 0,1,0.5
     Rectangle:
       size: root.size
       pos: root.pos
+
+  Player:
+    id: user
+    center: root.center
+    size: 10, 10
