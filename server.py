@@ -45,12 +45,16 @@ def main():
         if data:
           plaintext = data.decode()
           if plaintext.startswith('C!'):
+            if plaintext[2:] in players.keys:
+              if s in socks:
+                socks.remove(s)
+              s.close()
             players[plaintext[2:]] = {}
             print('received player id {}'.format(plaintext))
 
           else:
             try:
-              json.loads(plaintext)
+              print(json.loads(plaintext))
             except json.decoder.JSONDecodeError:
               print('failed to gain data from client (decode failed)')
 

@@ -8,6 +8,7 @@ import socket
 import select
 import sys
 import uuid
+import json
 
 
 class Player(Widget):
@@ -28,6 +29,10 @@ class Content(Widget):
 
     self.uuid = uuid.uuid1()
     self.sent_id = False
+
+    self.d = {}
+
+    self.players = {}
 
     try:
       ip = sys.argv[1].split(':')[0]
@@ -58,6 +63,15 @@ class Content(Widget):
     self.mouse_pos = pos
 
   def get_network(self,t):
+    self.ex_d = self.d
+
+    self.d = {
+      'x' : self.user.x,
+      'y' : self.user.y
+    }
+
+    if self.d != self.ex_d:
+      self.client.send(json.dumps(self.d).encode())
 
     readable, writable, exception = select.select([self.client], [], [], 0)
 
@@ -67,8 +81,11 @@ class Content(Widget):
         print('Connection terminated')
         sys.exit(0)
 
+      str_d = data.decode()
 
-      data.decode()
+      dict_d = json.loads(str_d)
+
+      self.players[dict_d['user']] == dict_d['data']
 
     if not self.sent_id:
       self.client.send('C!{}'.format(self.uuid).encode())
