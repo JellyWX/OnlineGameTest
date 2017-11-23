@@ -18,6 +18,7 @@ socks = [server]
 players = {}
 
 def main():
+  i = 0
 
   while socks:
     time.sleep(1.0/64)
@@ -45,19 +46,23 @@ def main():
         if data:
           plaintext = data.decode()
           if plaintext.startswith('C!'):
-            if plaintext[2:] in players.keys:
+            if plaintext[2:] in players.keys():
               if s in socks:
                 socks.remove(s)
               s.close()
-            players[plaintext[2:]] = {}
+            players[plaintext[2:]] = [i,{}]
+            i += 1
             print('received player id {}'.format(plaintext))
 
           else:
             try:
-              print(json.loads(plaintext))
+              d = json.loads(plaintext)
+              uid = d.pop('id')
+              players[uid][1] = d
             except json.decoder.JSONDecodeError:
-              print('failed to gain data from client (decode failed)')
+              print('failed to gain data from client (json decode failed)')
 
+            broadcast(players[uid])
 
         else:
           print('{} killed the connection'.format(s.getpeername()))
@@ -78,7 +83,7 @@ def broadcast(sock,message):
   for s in socks:
     if s != server:
       try:
-        s.send(enc.encrypt(message))
+        s.send(message)
       except:
         s.close()
         if s in socks:

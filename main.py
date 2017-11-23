@@ -51,7 +51,7 @@ class Content(Widget):
       print('Couldn\'t establish connection to {}:{}'.format(ip,port))
       sys.exit(0)
 
-    Clock.schedule_interval(self.get_network, 1.0/32)
+    Clock.schedule_interval(self.loop, 1.0/32)
 
   def keyDown(self,window,key,*largs):
     self.keysdown.add(key)
@@ -62,10 +62,21 @@ class Content(Widget):
   def catch_mouse(self,etype,pos):
     self.mouse_pos = pos
 
-  def get_network(self,t):
+  def loop(self,t):
+    self.get_network()
+
+
+  def get_network(self):
+
+    if not self.sent_id:
+      self.client.send('C!{}'.format(self.uuid).encode())
+      self.sent_id = True
+      return
+
     self.ex_d = self.d
 
     self.d = {
+      'id' : self.uuid,
       'x' : self.user.x,
       'y' : self.user.y
     }
@@ -86,10 +97,6 @@ class Content(Widget):
       dict_d = json.loads(str_d)
 
       self.players[dict_d['user']] == dict_d['data']
-
-    if not self.sent_id:
-      self.client.send('C!{}'.format(self.uuid).encode())
-      self.sent_id = True
 
 
 class Main(App):
