@@ -102,9 +102,15 @@ class Content(Widget):
 
       str_d = data.decode()
 
-      dict_d = json.loads(str_d)
+      sep_d = str_d.rsplit('{',1)[1]
 
-      self.players[dict_d['user']] == dict_d['data']
+      print(sep_d)
+
+      dict_d = json.loads('{' + sep_d)
+
+      self.players[dict_d['user']] = dict_d
+
+      print(self.players)
 
 
 class Main(App):

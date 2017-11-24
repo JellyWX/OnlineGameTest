@@ -50,7 +50,7 @@ def main():
               if s in socks:
                 socks.remove(s)
               s.close()
-            players[plaintext[2:]] = {'user' : i}
+            players[plaintext[2:]] = {'user' : str(i)}
             i += 1
             print('received player id {}'.format(plaintext))
 
@@ -65,7 +65,7 @@ def main():
               s.close()
               print('failed to gain data from client (json decode failed)')
 
-            broadcast(players[uid])
+            broadcast(s,json.dumps(players[uid]).encode())
 
         else:
           print('{} killed the connection'.format(s.getpeername()))
@@ -80,9 +80,9 @@ def main():
       s.close()
 
 
-def broadcast(message):
+def broadcast(sock, message):
   for s in socks:
-    if s != server:
+    if s not in [sock, server]:
       try:
         s.send(message)
       except:
