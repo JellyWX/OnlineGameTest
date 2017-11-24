@@ -1,6 +1,6 @@
 from kivy.app import App
 from kivy.clock import Clock
-from kivy.properties import ObjectProperty
+from kivy.properties import ObjectProperty, ReferenceListProperty
 from kivy.uix.widget import Widget
 from kivy.core.window import Window
 
@@ -12,12 +12,21 @@ import json
 
 
 class Player(Widget):
+
+  user = None
+
   def __init__(self,*args,**kwargs):
     super(Player,self).__init__(*args,**kwargs)
 
 
 class Content(Widget):
   user = ObjectProperty(None)
+  user2 = ObjectProperty(None)
+  user3 = ObjectProperty(None)
+  user4 = ObjectProperty(None)
+  user5 = ObjectProperty(None)
+
+  player_objects = ReferenceListProperty(user2, user3, user4, user5)
 
   keysdown = set([])
 
@@ -65,6 +74,20 @@ class Content(Widget):
   def loop(self,t):
     self.get_network()
 
+    all_users = [u.user for u in self.player_objects]
+
+    for player, data in self.players.items():
+      if player not in all_users:
+        for user in self.player_objects:
+          if user.user == None:
+            user.user = player
+            break
+
+    for user in self.player_objects:
+      if user.user != None:
+        user.x = self.players[user.user]['x']
+        user.y = self.players[user.user]['y']
+
     if 119 in self.keysdown:
       self.user.y += 2
     if 115 in self.keysdown:
@@ -104,13 +127,9 @@ class Content(Widget):
 
       sep_d = str_d.rsplit('{',1)[1]
 
-      print(sep_d)
-
       dict_d = json.loads('{' + sep_d)
 
       self.players[dict_d['user']] = dict_d
-
-      print(self.players)
 
 
 class Main(App):
