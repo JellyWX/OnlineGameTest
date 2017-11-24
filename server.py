@@ -50,7 +50,7 @@ def main():
               if s in socks:
                 socks.remove(s)
               s.close()
-            players[plaintext[2:]] = [i,{}]
+            players[plaintext[2:]] = {'user' : i}
             i += 1
             print('received player id {}'.format(plaintext))
 
@@ -58,8 +58,11 @@ def main():
             try:
               d = json.loads(plaintext)
               uid = d.pop('id')
-              players[uid][1] = d
+              players[uid].update(d)
             except json.decoder.JSONDecodeError:
+              if s in socks:
+                socks.remove(s)
+              s.close()
               print('failed to gain data from client (json decode failed)')
 
             broadcast(players[uid])
@@ -77,9 +80,7 @@ def main():
       s.close()
 
 
-def broadcast(sock,message):
-  global server, socks
-
+def broadcast(message):
   for s in socks:
     if s != server:
       try:

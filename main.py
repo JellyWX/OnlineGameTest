@@ -65,6 +65,14 @@ class Content(Widget):
   def loop(self,t):
     self.get_network()
 
+    if 119 in self.keysdown:
+      self.user.y += 2
+    if 115 in self.keysdown:
+      self.user.y -= 2
+    if 100 in self.keysdown:
+      self.user.x += 2
+    if 97 in self.keysdown:
+      self.user.x -= 2
 
   def get_network(self):
 
@@ -76,7 +84,7 @@ class Content(Widget):
     self.ex_d = self.d
 
     self.d = {
-      'id' : self.uuid,
+      'id' : str(self.uuid),
       'x' : self.user.x,
       'y' : self.user.y
     }
