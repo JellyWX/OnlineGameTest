@@ -1,6 +1,6 @@
 from kivy.app import App
 from kivy.clock import Clock
-from kivy.properties import ObjectProperty, ReferenceListProperty
+from kivy.properties import ListProperty, ObjectProperty, ReferenceListProperty
 from kivy.uix.widget import Widget
 from kivy.core.window import Window
 
@@ -9,11 +9,13 @@ import select
 import sys
 import uuid
 import json
+import random
 
 
 class Player(Widget):
 
   user = None
+  p_color = ListProperty([1, 0, 0])
 
   def __init__(self,*args,**kwargs):
     super(Player,self).__init__(*args,**kwargs)
@@ -42,6 +44,8 @@ class Content(Widget):
     self.d = {}
 
     self.players = {}
+
+    self.user.p_color = [random.random(), random.random(), random.random()]
 
     try:
       ip = sys.argv[1].split(':')[0]
@@ -87,6 +91,7 @@ class Content(Widget):
       if user.user != None:
         user.x = self.players[user.user]['x']
         user.y = self.players[user.user]['y']
+        user.p_color = self.players[user.user]['p_color']
 
     if 119 in self.keysdown:
       self.user.y += 2
@@ -109,7 +114,8 @@ class Content(Widget):
     self.d = {
       'id' : str(self.uuid),
       'x' : self.user.x,
-      'y' : self.user.y
+      'y' : self.user.y,
+      'p_color' : self.user.p_color
     }
 
     if self.d != self.ex_d:
