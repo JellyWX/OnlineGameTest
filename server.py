@@ -7,11 +7,10 @@ import json
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setblocking(0)
 
-server_addr = ('localhost',46643)
+server_addr = ('localhost', 46643)
 server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 server.bind(server_addr)
 
-server.listen(12)
 
 socks = [server]
 
@@ -23,7 +22,7 @@ def main():
   while socks:
     time.sleep(1.0/64)
 
-    readable, writable, exception = select.select(socks,[],[],0)
+    readable, writable, exception = select.select(socks, [], [], 0)
 
     for s in readable:
 
@@ -53,7 +52,7 @@ def main():
             players[plaintext[2:]] = {'user' : str(i)}
             i += 1
             print('received player id {}'.format(plaintext))
-            s.send(''.join(json.dumps(d) for d in players.values() if d['user'] != str(i - 1)).encode())
+            s.send(''.join(json.dumps(d) for d in players.values() if d['user'] != str(i - 1)).encode()) # this line sends all the current player data to the user on connect
 
           else:
             try:
@@ -66,7 +65,7 @@ def main():
               s.close()
               print('failed to gain data from client (json decode failed)')
 
-            broadcast(s,json.dumps(players[uid]).encode())
+            broadcast(s, json.dumps(players[uid]).encode())
 
         else:
           print('{} killed the connection'.format(s.getpeername()))
