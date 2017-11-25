@@ -131,11 +131,12 @@ class Content(Widget):
 
       str_d = data.decode()
 
-      sep_d = str_d.rsplit('{',1)[1]
+      sep_d = str_d.split('{')[1]
 
-      dict_d = json.loads('{' + sep_d)
+      for data in sep_d:
+        dict_d = json.loads('{' + sep_d)
 
-      self.players[dict_d['user']] = dict_d
+        self.players[dict_d['user']] = dict_d
 
 
 class Main(App):

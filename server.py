@@ -53,6 +53,7 @@ def main():
             players[plaintext[2:]] = {'user' : str(i)}
             i += 1
             print('received player id {}'.format(plaintext))
+            s.send(''.join(json.dumps(d) for d in players.values() if d['user'] != str(i - 1)).encode())
 
           else:
             try:
