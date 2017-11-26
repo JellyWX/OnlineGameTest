@@ -1,8 +1,9 @@
 from kivy.app import App
 from kivy.clock import Clock
-from kivy.properties import ListProperty, ObjectProperty, ReferenceListProperty
+from kivy.properties import ListProperty, NumericProperty, ObjectProperty, ReferenceListProperty
 from kivy.uix.widget import Widget
 from kivy.core.window import Window
+from kivy.vector import Vector
 
 import socket
 import select
@@ -18,8 +19,15 @@ class Player(Widget):
   user = None
   p_color = ListProperty([1, 0, 0])
 
+  vel_x = NumericProperty(0)
+  vel_y = NumericProperty(0)
+  vel = ReferenceListProperty(vel_x, vel_y)
+
   def __init__(self,*args,**kwargs):
     super(Player,self).__init__(*args,**kwargs)
+
+  def move(self):
+    self.pos = Vector(self.vel).normalize()*3 + self.pos
 
 
 class Content(Widget):
@@ -42,7 +50,7 @@ class Content(Widget):
     self.uuid = str(uuid.uuid1()).replace('-','')
 
     self.d = {}
-    self.time_since_token = time.time() - 60
+    self.time_since_token = 0
 
     self.players = {}
 
@@ -92,7 +100,7 @@ class Content(Widget):
       if user.user != None:
         user.x = self.players[user.user]['x']
         user.y = self.players[user.user]['y']
-        user.p_color = self.players[user.user]['p_color']
+        user.p_color = self.players[user.user]['color']
 
         if self.players[user.user]['status'] != 'OK':
           ex_user = user.user
@@ -100,14 +108,19 @@ class Content(Widget):
           user.p_color = 1, 0, 0
           del self.players[ex_user]
 
+    self.user.vel_x = 0
+    self.user.vel_y = 0
+
     if 119 in self.keysdown:
-      self.user.y += 2
+      self.user.vel_y = 1
     if 115 in self.keysdown:
-      self.user.y -= 2
+      self.user.vel_y = -1
     if 100 in self.keysdown:
-      self.user.x += 2
+      self.user.vel_x = 1
     if 97 in self.keysdown:
-      self.user.x -= 2
+      self.user.vel_x = -1
+
+    self.user.move()
 
   def get_network(self):
 
@@ -118,15 +131,17 @@ class Content(Widget):
     self.ex_d = self.d
 
     self.d = {
-      'id' : self.uuid,
       'x' : self.user.x,
       'y' : self.user.y,
-      'p_color' : self.user.p_color,
-      'status' : 'OK'
+      'color' : self.user.p_color
     }
 
-    if self.d != self.ex_d:
-      self.client.send(json.dumps(self.d, separators=(',',':')).encode())
+    self.differences = {x: self.d[x] for x in self.d.keys() if x not in self.ex_d.keys() or self.d[x] != self.ex_d[x]}
+
+    if self.differences:
+      self.differences['id'] = self.uuid
+      self.differences['status'] = 'OK'
+      self.client.send(json.dumps(self.differences, separators=(',',':')).encode())
 
     readable, writable, exception = select.select([self.client], [], [], 0)
 
@@ -161,5 +176,8 @@ class Main(App):
 
 
 m = Main()
-m.run()
-m.content.disconnect_signal()
+try:
+  m.run()
+except KeyboardInterrupt:
+  m.content.disconnect_signal()
+# program ends naturally

@@ -77,7 +77,11 @@ def main():
 
     for user_id, refresh_time in timeouts.items():
       if time.time() - refresh_time[0] > 30:
-        address_book.remove(refresh_time[1])
+        try:
+          address_book.remove(refresh_time[1])
+        except:
+          pass
+
         queue_deletes.append(user_id)
         print('user disconnected (timeout)')
 
