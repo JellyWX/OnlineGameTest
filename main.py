@@ -35,7 +35,7 @@ class Content(Widget):
   def __init__(self,*args,**kwargs):
     super(Content,self).__init__(*args,**kwargs)
 
-    self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    self.client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     self.client.settimeout(2)
 
     self.uuid = uuid.uuid1()
@@ -125,9 +125,6 @@ class Content(Widget):
 
     if self.client in readable:
       data = self.client.recv(4096)
-      if not data:
-        print('Connection terminated')
-        sys.exit(0)
 
       str_d = data.decode()
 

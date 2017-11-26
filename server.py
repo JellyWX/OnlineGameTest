@@ -4,91 +4,57 @@ import sys
 import time
 import json
 
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 server.setblocking(0)
 
 server_addr = ('localhost', 46643)
 server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 server.bind(server_addr)
 
-
-socks = [server]
-
 players = {}
+address_book = []
 
 def main():
   i = 0
 
-  while socks:
+  while True:
     time.sleep(1.0/64)
 
-    readable, writable, exception = select.select(socks, [], [], 0)
+    readable, writable, exception = select.select([server], [], [], 0)
 
     for s in readable:
 
-      if s is server:
-        sock, addr = server.accept()
-        socks.append(sock)
-        print('{} connected to server'.format(addr))
+      data, address = s.recvfrom(4096)
 
-      else:
-
-        try:
-          data = s.recv(4096)
-        except ConnectionResetError:
-          print('{} killed the connection'.format('nicknames[s]'))
-          if s in socks:
-            socks.remove(s)
-          s.close()
-          continue
-
-        if data:
-          plaintext = data.decode()
-          if plaintext.startswith('C!'):
-            if plaintext[2:] in players.keys():
-              if s in socks:
-                socks.remove(s)
-              s.close()
-            players[plaintext[2:]] = {'user' : str(i)}
-            i += 1
-            print('received player id {}'.format(plaintext))
-            s.send(''.join(json.dumps(d) for d in players.values() if d['user'] != str(i - 1)).encode()) # this line sends all the current player data to the user on connect
-
-          else:
-            try:
-              d = json.loads(plaintext)
-              uid = d.pop('id')
-              players[uid].update(d)
-            except json.decoder.JSONDecodeError:
-              if s in socks:
-                socks.remove(s)
-              s.close()
-              print('failed to gain data from client (json decode failed)')
-
-            broadcast(s, json.dumps(players[uid]).encode())
+      if data:
+        plaintext = data.decode()
+        if plaintext.startswith('C!') and address not in address_book:
+          if plaintext[2:] in players.keys():
+            continue
+          players[plaintext[2:]] = {'user' : str(i)}
+          i += 1
+          print('received player id {}'.format(plaintext))
+          server.sendto(''.join(json.dumps(d) for d in players.values() if d['user'] != str(i - 1)).encode(), address) # this line sends all the current player data to the user on connect
+          address_book.append(address)
 
         else:
-          print('{} killed the connection'.format(s.getpeername()))
-          if s in socks:
-            socks.remove(s)
-          s.close()
+          try:
+            d = json.loads(plaintext)
+            uid = d.pop('id')
+            players[uid].update(d)
+          except json.decoder.JSONDecodeError:
+            address_book.remove(address)
+            print('failed to gain data from client (json decode failed)')
 
-    for s in exception:
-      print('{} killed the connection (exception detected)'.format(s.getpeername()))
-      if s in socks:
-        socks.remove(s)
-      s.close()
+          broadcast(address, json.dumps(players[uid]).encode())
 
 
-def broadcast(sock, message):
-  for s in socks:
-    if s not in [sock, server]:
+def broadcast(address, message):
+  for addr in address_book:
+    if addr != address:
       try:
-        s.send(message)
+        server.sendto(message, addr)
       except:
-        s.close()
-        if s in socks:
-          socks.remove(s)
-
+        pass
 
 main()
