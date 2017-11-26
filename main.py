@@ -39,7 +39,6 @@ class Content(Widget):
     self.client.settimeout(2)
 
     self.uuid = uuid.uuid1()
-    self.sent_id = False
 
     self.d = {}
 
@@ -104,10 +103,7 @@ class Content(Widget):
 
   def get_network(self):
 
-    if not self.sent_id:
-      self.client.send('C!{}'.format(self.uuid).encode())
-      self.sent_id = True
-      return
+    self.client.send('C!{}'.format(self.uuid).encode())
 
     self.ex_d = self.d
 
@@ -115,7 +111,8 @@ class Content(Widget):
       'id' : str(self.uuid),
       'x' : self.user.x,
       'y' : self.user.y,
-      'p_color' : self.user.p_color
+      'p_color' : self.user.p_color,
+      'status' : 'ok'
     }
 
     if self.d != self.ex_d:
@@ -136,6 +133,10 @@ class Content(Widget):
 
           self.players[dict_d['user']] = dict_d
 
+  def disconnect_signal(self):
+    self.client.send(json.dumps({'id' : str(self.uuid), 'status' : 'discon'}).encode())
+    sys.exit(0)
+
 
 class Main(App):
   def on_start(self):
@@ -144,6 +145,9 @@ class Main(App):
   def build(self):
     self.content = Content()
     return self.content
+
+  def on_stop(self):
+    self.content.disconnect_signal()
 
 
 Main().run()
