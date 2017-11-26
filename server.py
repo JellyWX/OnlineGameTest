@@ -43,18 +43,18 @@ def main():
       if data:
         plaintext = data.decode()
 
-        if plaintext.startswith('C!'): # if a token has been sent through
+        if plaintext.startswith('C'): # if a token has been sent through
 
-          if plaintext[2:] in players.keys(): # if the token is already registered (the client is refreshing its presence)
-            timeouts[plaintext[2:]] = [time.time(), address]
+          if plaintext[1:] in players.keys(): # if the token is already registered (the client is refreshing its presence)
+            timeouts[plaintext[1:]] = [time.time(), address]
 
           elif address not in address_book: # if the token is new (new user connected)
-            timeouts[plaintext[2:]] = [time.time(), address]
+            timeouts[plaintext[1:]] = [time.time(), address]
 
-            players[plaintext[2:]] = {'user' : str(i), 'status' : 'OK'}
+            players[plaintext[1:]] = {'user' : str(i), 'status' : 'OK'}
             i += 1
             print('received player id {}'.format(plaintext))
-            server.sendto(''.join(json.dumps(d) for d in players.values() if d['user'] != str(i - 1)).encode(), address) # this line sends all the current player data to the user on connect
+            server.sendto(''.join(json.dumps(d, separators=(',',':')) for d in players.values() if d['user'] != str(i - 1)).encode(), address) # this line sends all the current player data to the user on connect
             address_book.append(address)
 
         else:
@@ -73,10 +73,10 @@ def main():
           else:
             players[uid].update(d)
 
-            broadcast(address, json.dumps(players[uid]).encode())
+            broadcast(address, json.dumps(players[uid], separators=(',',':')).encode())
 
     for user_id, refresh_time in timeouts.items():
-      if time.time() - refresh_time[0] > 5:
+      if time.time() - refresh_time[0] > 30:
         address_book.remove(refresh_time[1])
         queue_deletes.append(user_id)
         print('user disconnected (timeout)')
@@ -87,7 +87,7 @@ def main():
 
         players[item]['status'] = 'discon'
 
-        broadcast(None,json.dumps(players[item]).encode())
+        broadcast(None,json.dumps(players[item],separators=(',',':')).encode())
         del players[item]
 
 def broadcast(address, message):

@@ -39,14 +39,14 @@ class Content(Widget):
     self.client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     self.client.settimeout(2)
 
-    self.uuid = uuid.uuid1()
+    self.uuid = str(uuid.uuid1()).replace('-','')
 
     self.d = {}
-    self.time_since_token = time.time() - 1
+    self.time_since_token = time.time() - 60
 
     self.players = {}
 
-    self.user.p_color = [random.random(), random.random(), random.random()]
+    self.user.p_color = [round(random.random(),3), round(random.random(),3), round(random.random(),3)]
 
     try:
       ip = sys.argv[1].split(':')[0]
@@ -111,13 +111,14 @@ class Content(Widget):
 
   def get_network(self):
 
-    if time.time() - self.time_since_token > 1:
-      self.client.send('C!{}'.format(self.uuid).encode())
+    if time.time() - self.time_since_token > 8:
+      self.client.send('C{}'.format(self.uuid).encode())
+      self.time_since_token = time.time()
 
     self.ex_d = self.d
 
     self.d = {
-      'id' : str(self.uuid),
+      'id' : self.uuid,
       'x' : self.user.x,
       'y' : self.user.y,
       'p_color' : self.user.p_color,
@@ -125,7 +126,7 @@ class Content(Widget):
     }
 
     if self.d != self.ex_d:
-      self.client.send(json.dumps(self.d).encode())
+      self.client.send(json.dumps(self.d, separators=(',',':')).encode())
 
     readable, writable, exception = select.select([self.client], [], [], 0)
 
@@ -143,7 +144,7 @@ class Content(Widget):
           self.players[dict_d['user']] = dict_d
 
   def disconnect_signal(self):
-    self.client.send(json.dumps({'id' : str(self.uuid), 'status' : 'discon'}).encode())
+    self.client.send(json.dumps({'id' : self.uuid, 'status' : 'discon'}, separators=(',',':')).encode())
     sys.exit(0)
 
 
