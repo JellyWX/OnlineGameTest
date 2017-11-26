@@ -10,6 +10,7 @@ import sys
 import uuid
 import json
 import random
+import time
 
 
 class Player(Widget):
@@ -41,6 +42,7 @@ class Content(Widget):
     self.uuid = uuid.uuid1()
 
     self.d = {}
+    self.time_since_token = time.time() - 1
 
     self.players = {}
 
@@ -92,6 +94,12 @@ class Content(Widget):
         user.y = self.players[user.user]['y']
         user.p_color = self.players[user.user]['p_color']
 
+        if self.players[user.user]['status'] != 'OK':
+          ex_user = user.user
+          user.user = None
+          user.p_color = 1, 0, 0
+          del self.players[ex_user]
+
     if 119 in self.keysdown:
       self.user.y += 2
     if 115 in self.keysdown:
@@ -103,7 +111,8 @@ class Content(Widget):
 
   def get_network(self):
 
-    self.client.send('C!{}'.format(self.uuid).encode())
+    if time.time() - self.time_since_token > 1:
+      self.client.send('C!{}'.format(self.uuid).encode())
 
     self.ex_d = self.d
 
@@ -112,7 +121,7 @@ class Content(Widget):
       'x' : self.user.x,
       'y' : self.user.y,
       'p_color' : self.user.p_color,
-      'status' : 'ok'
+      'status' : 'OK'
     }
 
     if self.d != self.ex_d:
@@ -150,4 +159,6 @@ class Main(App):
     self.content.disconnect_signal()
 
 
-Main().run()
+m = Main()
+m.run()
+m.content.disconnect_signal()

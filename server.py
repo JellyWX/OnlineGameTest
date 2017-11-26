@@ -4,10 +4,22 @@ import sys
 import time
 import json
 
+TICKRATE = 64
+ADDRESS = 'localhost'
+PORT = 46643
+
+for item in sys.argv:
+  if item.startswith('tick='):
+    TICKRATE = int(item.split('=')[1])
+  elif item.startswith('port='):
+    PORT = int(item.split('=')[1])
+  elif item.startswith('host='):
+    ADDRESS = item.split('=')[1]
+
 server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 server.setblocking(0)
 
-server_addr = ('localhost', 46643)
+server_addr = (ADDRESS, PORT)
 server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 server.bind(server_addr)
 
@@ -19,7 +31,7 @@ def main():
   i = 0
 
   while True:
-    time.sleep(1.0/64)
+    time.sleep(1.0/TICKRATE)
     queue_deletes = []
 
     readable, writable, exception = select.select([server], [], [], 0)
@@ -39,7 +51,7 @@ def main():
           elif address not in address_book: # if the token is new (new user connected)
             timeouts[plaintext[2:]] = [time.time(), address]
 
-            players[plaintext[2:]] = {'user' : str(i)}
+            players[plaintext[2:]] = {'user' : str(i), 'status' : 'OK'}
             i += 1
             print('received player id {}'.format(plaintext))
             server.sendto(''.join(json.dumps(d) for d in players.values() if d['user'] != str(i - 1)).encode(), address) # this line sends all the current player data to the user on connect
@@ -48,19 +60,20 @@ def main():
         else:
           try:
             d = json.loads(plaintext)
-            uid = d.pop('id')
-
-            if d['status'] == 'discon':
-              address_book.remove(address)
-              queue_deletes.append(user_id)
-              print('user disconnected')
-            else:
-              players[uid].update(d)
           except json.decoder.JSONDecodeError:
             address_book.remove(address)
             print('failed to gain data from client (json decode failed)')
 
-          broadcast(address, json.dumps(players[uid]).encode())
+          uid = d.pop('id')
+
+          if d['status'] == 'discon':
+            address_book.remove(address)
+            queue_deletes.append(user_id)
+            print('user disconnected')
+          else:
+            players[uid].update(d)
+
+            broadcast(address, json.dumps(players[uid]).encode())
 
     for user_id, refresh_time in timeouts.items():
       if time.time() - refresh_time[0] > 5:
@@ -68,16 +81,18 @@ def main():
         queue_deletes.append(user_id)
         print('user disconnected (timeout)')
 
-    for item in queue_deletes:
-      del timeouts[item]
-      del players[item]
+    if queue_deletes:
+      for item in queue_deletes:
+        del timeouts[item]
+
+        players[item]['status'] = 'discon'
+
+        broadcast(None,json.dumps(players[item]).encode())
+        del players[item]
 
 def broadcast(address, message):
   for addr in address_book:
     if addr != address:
-      try:
-        server.sendto(message, addr)
-      except:
-        pass
+      server.sendto(message, addr)
 
 main()
