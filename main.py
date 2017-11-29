@@ -32,12 +32,8 @@ class Player(Widget):
 
 class Content(Widget):
   user = ObjectProperty(None)
-  user2 = ObjectProperty(None)
-  user3 = ObjectProperty(None)
-  user4 = ObjectProperty(None)
-  user5 = ObjectProperty(None)
 
-  player_objects = ReferenceListProperty(user2, user3, user4, user5)
+  player_objects = []
 
   keysdown = set([])
 
@@ -91,10 +87,12 @@ class Content(Widget):
 
     for player, data in self.players.items():
       if player not in all_users:
-        for user in self.player_objects:
-          if user.user == None:
-            user.user = player
-            break
+        new_user = Player()
+        new_user.user = player
+        new_user.width = 10
+        new_user.height = 10
+        self.player_objects.append(new_user)
+        self.add_widget(new_user)
 
     for user in self.player_objects:
       if user.user != None:
@@ -103,10 +101,9 @@ class Content(Widget):
         user.p_color = self.players[user.user]['color']
 
         if self.players[user.user]['status'] != 'OK':
-          ex_user = user.user
-          user.user = None
-          user.p_color = 1, 0, 0
-          del self.players[ex_user]
+          self.remove_widget(user)
+          self.player_objects.remove(user)
+          del self.players[user.user]
 
     self.user.vel_x = 0
     self.user.vel_y = 0
