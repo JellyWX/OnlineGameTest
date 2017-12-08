@@ -1,15 +1,27 @@
 <Player>:
-  canvas:
+  canvas.before:
+    PushMatrix
+    Rotate:
+      angle: 180 - self.rotation
+      origin: self.center
     Color:
       rgb: 1, 1, 1
     Ellipse:
-      size: self.width + 4, self.height + 4
-      pos: self.x - 2, self.y - 2
+      size: self.width * 1.25, self.height * 1.25
+      pos: self.x - self.width * 0.125, self.y - self.height * 0.125
     Color:
       rgb: self.p_color
     Ellipse:
       size: self.size
       pos: self.pos
+    Color:
+      rgb: 0, 0, 0
+    RoundedRectangle:
+      size: self.width / 4, self.height / 2
+      radius: self.width / 12, self.width / 12
+      pos: self.x + self.width * 0.375, self.y
+  canvas.after:
+    PopMatrix
 
 <Content>:
   user: user
@@ -24,4 +36,4 @@
   Player:
     id: user
     center: root.center
-    size: 10, 10
+    size: 100, 100

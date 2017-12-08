@@ -12,6 +12,7 @@ import uuid
 import json
 import random
 import time
+import math
 
 
 class Player(Widget):
@@ -23,11 +24,13 @@ class Player(Widget):
   vel_y = NumericProperty(0)
   vel = ReferenceListProperty(vel_x, vel_y)
 
+  rotation = NumericProperty(0)
+
   def __init__(self,*args,**kwargs):
     super(Player,self).__init__(*args,**kwargs)
 
   def move(self):
-    self.pos = Vector(self.vel).normalize()*3 + self.pos
+    self.pos = Vector(self.vel).normalize() * 3 + self.pos
 
 
 class Content(Widget):
@@ -36,6 +39,8 @@ class Content(Widget):
   player_objects = []
 
   keysdown = set([])
+
+  mouse_pos = [0, 0]
 
   def __init__(self,*args,**kwargs):
     super(Content,self).__init__(*args,**kwargs)
@@ -89,8 +94,8 @@ class Content(Widget):
       if player not in all_users:
         new_user = Player()
         new_user.user = player
-        new_user.width = 10
-        new_user.height = 10
+        new_user.width = 100
+        new_user.height = 100
         self.player_objects.append(new_user)
         self.add_widget(new_user)
 
@@ -99,6 +104,7 @@ class Content(Widget):
         user.x = self.players[user.user]['x']
         user.y = self.players[user.user]['y']
         user.p_color = self.players[user.user]['color']
+        user.rotation = self.players[user.user]['rot'] * 4
 
         if self.players[user.user]['status'] != 'OK':
           self.remove_widget(user)
@@ -117,7 +123,13 @@ class Content(Widget):
     if 97 in self.keysdown:
       self.user.vel_x = -1
 
+    try:
+      self.user.rotation = round(math.degrees(math.atan2(self.mouse_pos[0] - self.user.center_x, self.mouse_pos[1] - self.user.center_y)))
+    except ZeroDivisionError:
+      pass
+
     self.user.move()
+    self.user.firing = False
 
   def get_network(self):
 
@@ -130,7 +142,8 @@ class Content(Widget):
     self.d = {
       'x' : self.user.x,
       'y' : self.user.y,
-      'color' : self.user.p_color
+      'color' : self.user.p_color,
+      'rot' : int(self.user.rotation / 4)
     }
 
     self.differences = {x: self.d[x] for x in self.d.keys() if x not in self.ex_d.keys() or self.d[x] != self.ex_d[x]}
@@ -138,7 +151,7 @@ class Content(Widget):
     if self.differences:
       self.differences['id'] = self.uuid
       self.differences['status'] = 'OK'
-      self.client.send(json.dumps(self.differences, separators=(',',':')).encode())
+      self.client.send(json.dumps(self.differences, separators=(',', ':')).encode())
 
     readable, writable, exception = select.select([self.client], [], [], 0)
 
@@ -156,13 +169,13 @@ class Content(Widget):
           self.players[dict_d['user']] = dict_d
 
   def disconnect_signal(self):
-    self.client.send(json.dumps({'id' : self.uuid, 'status' : 'discon'}, separators=(',',':')).encode())
+    self.client.send(json.dumps({'id' : self.uuid, 'status' : 'discon'}, separators=(',', ':')).encode())
     sys.exit(0)
 
 
 class Main(App):
   def on_start(self):
-    Window.bind(on_key_down=self.content.keyDown,on_key_up=self.content.keyUp,mouse_pos=self.content.catch_mouse)
+    Window.bind(on_key_down=self.content.keyDown, on_key_up=self.content.keyUp, mouse_pos=self.content.catch_mouse)
 
   def build(self):
     self.content = Content()
