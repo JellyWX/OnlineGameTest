@@ -26,6 +26,9 @@ class Player(Widget):
 
   rotation = NumericProperty(0)
 
+  firing = False
+  weapon = None
+
   def __init__(self,*args,**kwargs):
     super(Player,self).__init__(*args,**kwargs)
 
@@ -34,6 +37,7 @@ class Player(Widget):
 
 
 class Content(Widget):
+
   user = ObjectProperty(None)
 
   player_objects = []
@@ -85,6 +89,12 @@ class Content(Widget):
   def catch_mouse(self,etype,pos):
     self.mouse_pos = pos
 
+  def on_touch_down(self,e):
+    self.mouse_pressed = True
+
+  def on_touch_up(self,e):
+    self.mouse_pressed = False
+
   def loop(self,t):
     self.get_network()
 
@@ -129,7 +139,7 @@ class Content(Widget):
       pass
 
     self.user.move()
-    self.user.firing = False
+    self.user.firing = self.mouse_pressed
 
   def get_network(self):
 
@@ -143,7 +153,8 @@ class Content(Widget):
       'x' : self.user.x,
       'y' : self.user.y,
       'col' : self.user.p_color,
-      'rot' : int(self.user.rotation / 4)
+      'rot' : int(self.user.rotation / 4),
+      'fire' : self.user.firing
     }
 
     self.differences = {x: self.d[x] for x in self.d.keys() if x not in self.ex_d.keys() or self.d[x] != self.ex_d[x]}

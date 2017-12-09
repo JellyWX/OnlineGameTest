@@ -1,0 +1,19 @@
+{
+  "pistol" : {
+    "firemode" : "tap",
+    "firerate" : 0.12,
+    "damage" : 46
+  },
+
+  "rifle" : {
+    "firemode" : "tap",
+    "firerate" : 0.45,
+    "damage" : 120
+  },
+
+  "machine gun" : {
+    "firemode" : "hold",
+    "firerate" : 0.08,
+    "damage" : 35
+  }
+}
