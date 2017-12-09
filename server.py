@@ -3,6 +3,7 @@ import socket
 import sys
 import time
 import json
+import math
 
 TICKRATE = 64
 ADDRESS = 'localhost'
@@ -54,7 +55,7 @@ def main():
             players[plaintext[1:]] = {'user' : str(i), 'status' : 'OK'}
             i += 1
             print('received player id {}'.format(plaintext))
-            server.sendto(''.join(json.dumps(d, separators=(',',':')) for d in players.values() if d['user'] != str(i - 1)).encode(), address) # this line sends all the current player data to the user on connect
+            server.sendto(''.join(json.dumps(d, separators=(',', ':')) for d in players.values() if d['user'] != str(i - 1)).encode(), address) # this line sends all the current player data to the user on connect
             address_book.append(address)
 
         else:
@@ -71,9 +72,21 @@ def main():
             queue_deletes.append(user_id)
             print('user disconnected')
           else:
+            player_old = players[uid].copy()
             players[uid].update(d)
+            player_new = players[uid]
 
-            broadcast(address, json.dumps(players[uid], separators=(',',':')).encode())
+            player_old['user'] = 'N'
+
+            try:
+              if round(math.hypot(player_old['x'] - player_new['x'], player_old['y'] - player_new['y']), 4) > 3:
+                print('illegal movement. disregarding instruction.')
+                players[uid] = player_old
+                server.sendto(json.dumps(player_old, separators=(',', ':')).encode(), address)
+            except KeyError:
+              pass
+
+            broadcast(address, json.dumps(players[uid], separators=(',', ':')).encode())
 
     for user_id, refresh_time in timeouts.items():
       if time.time() - refresh_time[0] > 30:

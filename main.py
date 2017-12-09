@@ -94,8 +94,8 @@ class Content(Widget):
       if player not in all_users:
         new_user = Player()
         new_user.user = player
-        new_user.width = 100
-        new_user.height = 100
+        new_user.width = 25
+        new_user.height = 25
         self.player_objects.append(new_user)
         self.add_widget(new_user)
 
@@ -103,7 +103,7 @@ class Content(Widget):
       if user.user != None:
         user.x = self.players[user.user]['x']
         user.y = self.players[user.user]['y']
-        user.p_color = self.players[user.user]['color']
+        user.p_color = self.players[user.user]['col']
         user.rotation = self.players[user.user]['rot'] * 4
 
         if self.players[user.user]['status'] != 'OK':
@@ -142,7 +142,7 @@ class Content(Widget):
     self.d = {
       'x' : self.user.x,
       'y' : self.user.y,
-      'color' : self.user.p_color,
+      'col' : self.user.p_color,
       'rot' : int(self.user.rotation / 4)
     }
 
@@ -166,7 +166,12 @@ class Content(Widget):
         if data:
           dict_d = json.loads(data + '}')
 
-          self.players[dict_d['user']] = dict_d
+          if dict_d['user'] == 'N':
+            self.user.x = dict_d['x']
+            self.user.y = dict_d['y']
+
+          else:
+            self.players[dict_d['user']] = dict_d
 
   def disconnect_signal(self):
     self.client.send(json.dumps({'id' : self.uuid, 'status' : 'discon'}, separators=(',', ':')).encode())
