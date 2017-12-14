@@ -19,6 +19,7 @@ class Player(Widget):
 
   user = None
   p_color = ListProperty([1, 0, 0])
+  d_color = ListProperty([1, 0, 0])
 
   vel_x = NumericProperty(0)
   vel_y = NumericProperty(0)
@@ -45,6 +46,7 @@ class Content(Widget):
   keysdown = set([])
 
   mouse_pos = [0, 0]
+  mouse_pressed = False
 
   def __init__(self,*args,**kwargs):
     super(Content,self).__init__(*args,**kwargs)
@@ -52,14 +54,17 @@ class Content(Widget):
     self.client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     self.client.settimeout(2)
 
-    self.uuid = str(uuid.uuid1()).replace('-','')
+    self.uuid = uuid.uuid1().hex
 
     self.d = {}
     self.time_since_token = 0
 
     self.players = {}
 
-    self.user.p_color = [round(random.random(),3), round(random.random(),3), round(random.random(),3)]
+    li = [round(random.random(),3), round(random.random(),3), round(random.random(),3)]
+
+    self.user.p_color = list(li)
+    self.user.d_color = list(li)
 
     try:
       ip = sys.argv[1].split(':')[0]
@@ -93,6 +98,7 @@ class Content(Widget):
     self.mouse_pressed = True
 
   def on_touch_up(self,e):
+    print(self.user.p_color)
     self.mouse_pressed = False
 
   def loop(self,t):
@@ -114,7 +120,13 @@ class Content(Widget):
         user.x = self.players[user.user]['x']
         user.y = self.players[user.user]['y']
         user.p_color = self.players[user.user]['col']
-        user.rotation = self.players[user.user]['rot'] * 4
+        user.rotation = self.players[user.user]['rot'] * 4 # rotation is sent as a smaller number to save like 7 bits smh
+        user.firing = self.players[user.user]['fire']
+
+        if user.firing:
+          user.d_color = [1, 1, 0]
+        else:
+          user.d_color = user.p_color
 
         if self.players[user.user]['status'] != 'OK':
           self.remove_widget(user)
@@ -140,6 +152,11 @@ class Content(Widget):
 
     self.user.move()
     self.user.firing = self.mouse_pressed
+
+    if self.user.firing:
+      self.user.d_color = [1, 1, 0]
+    else:
+      self.user.d_color = self.user.p_color
 
   def get_network(self):
 

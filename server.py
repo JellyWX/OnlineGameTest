@@ -73,7 +73,13 @@ def main():
             queue_deletes.append(user_id)
             print('user disconnected')
           else:
-            player_old = players[uid].copy()
+
+            try:
+              player_old = players[uid].copy() # depending on the position in the cycle that a user discons at, it can cause errors here.
+            except KeyError:
+              address_book.remove(address)
+              queue_deletes.append(user_id)
+
             players[uid].update(d)
             player_new = players[uid]
 
