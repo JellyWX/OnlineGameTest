@@ -9,10 +9,10 @@ import socket
 import select
 import sys
 import uuid
-import json
 import random
 import time
 import math
+import umsgpack
 
 
 class Player(Widget):
@@ -98,7 +98,6 @@ class Content(Widget):
     self.mouse_pressed = True
 
   def on_touch_up(self,e):
-    print(self.user.p_color)
     self.mouse_pressed = False
 
   def loop(self,t):
@@ -179,30 +178,31 @@ class Content(Widget):
     if self.differences:
       self.differences['id'] = self.uuid
       self.differences['status'] = 'OK'
-      self.client.send(json.dumps(self.differences, separators=(',', ':')).encode())
+      self.client.send(umsgpack.packb(self.differences))
 
     readable, writable, exception = select.select([self.client], [], [], 0)
 
     if self.client in readable:
-      data = self.client.recv(4096)
+      data_b = self.client.recv(4096)
+      d = umsgpack.unpackb(data_b)
 
-      str_d = data.decode()
+      if type(d) == dict:
 
-      sep_d = str_d.split('}')
+        if d['user'] == 'N':
+          self.user.x = data['x']
+          self.user.y = data['y']
 
-      for data in sep_d:
-        if data:
-          dict_d = json.loads(data + '}')
+        else:
+          self.players[d['user']] = d
 
-          if dict_d['user'] == 'N':
-            self.user.x = dict_d['x']
-            self.user.y = dict_d['y']
+      elif type(d) == list:
+        for data in d:
+          self.players[data['user']] = data
 
-          else:
-            self.players[dict_d['user']] = dict_d
+      print(self.players)
 
   def disconnect_signal(self):
-    self.client.send(json.dumps({'id' : self.uuid, 'status' : 'discon'}, separators=(',', ':')).encode())
+    self.client.send(umsgpack.packb({'id' : self.uuid, 'status' : 'discon'}))
     sys.exit(0)
 
 

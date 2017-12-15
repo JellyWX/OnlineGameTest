@@ -2,8 +2,8 @@ import select
 import socket
 import sys
 import time
-import json
 import math
+import umsgpack
 
 TICKRATE = 64
 ADDRESS = 'localhost'
@@ -33,6 +33,7 @@ def main():
   i = 0
 
   while True:
+
     time.sleep(1.0/TICKRATE)
     queue_deletes = []
 
@@ -43,7 +44,10 @@ def main():
       data, address = s.recvfrom(4096)
 
       if data:
-        plaintext = data.decode()
+        try:
+          plaintext = data.decode()
+        except UnicodeDecodeError:
+          plaintext = ''
 
         if plaintext.startswith('C'): # if a token has been sent through
 
@@ -56,15 +60,16 @@ def main():
             players[plaintext[1:]] = {'user' : str(i), 'status' : 'OK'}
             i += 1
             print('received player id {}'.format(plaintext))
-            server.sendto(''.join(json.dumps(d, separators=(',', ':')) for d in players.values() if d['user'] != str(i - 1)).encode(), address) # this line sends all the current player data to the user on connect
+            server.sendto(umsgpack.packb([d for d in players.values() if d['user'] != str(i - 1)]), address) # this line sends all the current player data to the user on connect
             address_book.append(address)
 
         else:
           try:
-            d = json.loads(plaintext)
-          except json.decoder.JSONDecodeError:
+            d = umsgpack.unpackb(data)
+          except TypeError:
             address_book.remove(address)
-            print('failed to gain data from client (json decode failed)')
+            print('failed to gain data from client (msgpack decode failed)')
+            continue
 
           uid = d.pop('id')
 
@@ -89,11 +94,11 @@ def main():
               if round(math.hypot(player_old['x'] - player_new['x'], player_old['y'] - player_new['y']), 4) > 3:
                 print('illegal movement. disregarding instruction.')
                 players[uid] = player_old
-                server.sendto(json.dumps(player_old, separators=(',', ':')).encode(), address)
+                server.sendto(umsgpack.packb(player_old), address)
             except KeyError:
               pass
 
-            broadcast(address, json.dumps(players[uid], separators=(',', ':')).encode())
+            broadcast(address, umsgpack.packb(players[uid]))
 
     for user_id, refresh_time in timeouts.items():
       if time.time() - refresh_time[0] > 30:
@@ -111,7 +116,7 @@ def main():
 
         players[item]['status'] = 'discon'
 
-        broadcast(None,json.dumps(players[item],separators=(',',':')).encode())
+        broadcast(None,umsgpack.packb(players[item]))
         del players[item]
 
 def broadcast(address, message):
