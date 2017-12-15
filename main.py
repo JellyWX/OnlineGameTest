@@ -224,3 +224,5 @@ try:
 except KeyboardInterrupt:
   m.content.disconnect_signal()
 # program ends naturally
+
+m.content.disconnect_signal()
