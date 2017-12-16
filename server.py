@@ -88,7 +88,7 @@ def main():
             players[uid].update(d)
             player_new = players[uid]
 
-            player_old['user'] = 'N'
+            player_old['user'] = -1
 
             try:
               if round(math.hypot(player_old['x'] - player_new['x'], player_old['y'] - player_new['y']), 4) > 3:

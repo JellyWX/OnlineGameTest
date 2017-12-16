@@ -99,7 +99,7 @@ class Content(Widget):
     self.mouse_pos = pos
 
   def on_touch_down(self,e):
-    self.mouse_pressed = True
+    self.mouse_pressed = self.mouse_pos
 
   def on_touch_up(self,e):
     self.mouse_pressed = False
@@ -192,7 +192,7 @@ class Content(Widget):
 
       if type(d) == dict:
 
-        if d['user'] == 'N':
+        if d['user'] == -1:
           self.user.x = data['x']
           self.user.y = data['y']
 
