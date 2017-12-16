@@ -90,13 +90,31 @@ def main():
 
             player_old['user'] = -1
 
-            try:
+            try: # basic anticheat to prevent speed cheating
               if round(math.hypot(player_old['x'] - player_new['x'], player_old['y'] - player_new['y']), 4) > 3:
                 print('illegal movement. disregarding instruction.')
                 players[uid] = player_old
                 server.sendto(msgpack.packb(player_old), address)
             except KeyError:
               pass
+
+            if players[uid]['fire']:
+              x = players[uid]['fire'][0]
+              y = players[uid]['fire'][1]
+              angles = []
+              for k in players.values():
+                if k is not players[uid]:
+                  e = [math.atan2(k['y'] - y + j, k['x'] - x + i) for i, j in [(0, 0), (0, 25), (25, 25), (25, 0)]]
+                  angles.append(
+                    [min(e), max(e)]
+                  )
+              firing_angle = math.atan2(players[uid]['y'] - y, players[uid]['x'] - x)
+
+              print(angles)
+
+              for angle in angles:
+                if angle[0] < firing_angle < angle[1]:
+                  print('thats a hit')
 
             broadcast(address, msgpack.packb(players[uid]))
 

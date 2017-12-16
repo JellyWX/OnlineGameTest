@@ -52,8 +52,8 @@ class Content(Widget):
   mouse_pos = [0, 0]
   mouse_pressed = False
 
-  def __init__(self,*args,**kwargs):
-    super(Content,self).__init__(*args,**kwargs)
+  def __init__(self, *args, **kwargs):
+    super(Content, self).__init__(*args, **kwargs)
 
     self.client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     self.client.settimeout(2)
@@ -84,24 +84,24 @@ class Content(Widget):
       self.client.connect((ip,port))
 
     except:
-      print('Couldn\'t establish connection to {}:{}'.format(ip,port))
+      print('Couldn\'t establish connection to {}:{}'.format(ip, port))
       sys.exit(0)
 
     Clock.schedule_interval(self.loop, 1.0/32)
 
-  def keyDown(self,window,key,*largs):
+  def keyDown(self, window, key, *largs):
     self.keysdown.add(key)
 
-  def keyUp(self,window,key,*largs):
+  def keyUp(self, window, key, *largs):
     self.keysdown.remove(key)
 
-  def catch_mouse(self,etype,pos):
+  def catch_mouse(self, etype, pos):
     self.mouse_pos = pos
 
-  def on_touch_down(self,e):
+  def on_touch_down(self, e):
     self.mouse_pressed = self.mouse_pos
 
-  def on_touch_up(self,e):
+  def on_touch_up(self, e):
     self.mouse_pressed = False
 
   def loop(self,t):
@@ -123,7 +123,7 @@ class Content(Widget):
         user.x = self.players[user.user]['x']
         user.y = self.players[user.user]['y']
         user.p_color = self.players[user.user]['col']
-        user.rotation = self.players[user.user]['rot'] * 4 # rotation is sent as a smaller number to save a few bits
+        user.rotation = self.players[user.user]['rot'] * 4 # rotation is lossy compressed to save a few bits and nibbles
         user.firing = self.players[user.user]['fire']
 
         if user.firing:
@@ -193,8 +193,8 @@ class Content(Widget):
       if type(d) == dict:
 
         if d['user'] == -1:
-          self.user.x = data['x']
-          self.user.y = data['y']
+          self.user.x = d['x']
+          self.user.y = d['y']
 
         else:
           self.players[d['user']] = d
