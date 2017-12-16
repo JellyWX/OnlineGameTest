@@ -12,7 +12,11 @@ import uuid
 import random
 import time
 import math
-import umsgpack
+try:
+  import msgpack
+except ImportError:
+  print('Please install msgpack-python. Running in compat mode')
+  import umsgpack as msgpack
 
 
 class Player(Widget):
@@ -119,7 +123,7 @@ class Content(Widget):
         user.x = self.players[user.user]['x']
         user.y = self.players[user.user]['y']
         user.p_color = self.players[user.user]['col']
-        user.rotation = self.players[user.user]['rot'] * 4 # rotation is sent as a smaller number to save like 7 bits smh
+        user.rotation = self.players[user.user]['rot'] * 4 # rotation is sent as a smaller number to save a few bits
         user.firing = self.players[user.user]['fire']
 
         if user.firing:
@@ -178,13 +182,13 @@ class Content(Widget):
     if self.differences:
       self.differences['id'] = self.uuid
       self.differences['status'] = 'OK'
-      self.client.send(umsgpack.packb(self.differences))
+      self.client.send(msgpack.packb(self.differences))
 
     readable, writable, exception = select.select([self.client], [], [], 0)
 
     if self.client in readable:
       data_b = self.client.recv(4096)
-      d = umsgpack.unpackb(data_b)
+      d = msgpack.unpackb(data_b, encoding='utf8')
 
       if type(d) == dict:
 
@@ -199,10 +203,8 @@ class Content(Widget):
         for data in d:
           self.players[data['user']] = data
 
-      print(self.players)
-
   def disconnect_signal(self):
-    self.client.send(umsgpack.packb({'id' : self.uuid, 'status' : 'discon'}))
+    self.client.send(msgpack.packb({'id' : self.uuid, 'status' : 'discon'}))
     sys.exit(0)
 
 

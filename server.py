@@ -3,7 +3,7 @@ import socket
 import sys
 import time
 import math
-import umsgpack
+import msgpack
 
 TICKRATE = 64
 ADDRESS = 'localhost'
@@ -60,12 +60,12 @@ def main():
             players[plaintext[1:]] = {'user' : str(i), 'status' : 'OK'}
             i += 1
             print('received player id {}'.format(plaintext))
-            server.sendto(umsgpack.packb([d for d in players.values() if d['user'] != str(i - 1)]), address) # this line sends all the current player data to the user on connect
+            server.sendto(msgpack.packb([d for d in players.values() if d['user'] != str(i - 1)]), address) # this line sends all the current player data to the user on connect
             address_book.append(address)
 
         else:
           try:
-            d = umsgpack.unpackb(data)
+            d = msgpack.unpackb(data, encoding='utf8')
           except TypeError:
             address_book.remove(address)
             print('failed to gain data from client (msgpack decode failed)')
@@ -75,7 +75,7 @@ def main():
 
           if d['status'] == 'discon':
             address_book.remove(address)
-            queue_deletes.append(user_id)
+            queue_deletes.append(uid)
             print('user disconnected')
           else:
 
@@ -83,7 +83,7 @@ def main():
               player_old = players[uid].copy() # depending on the position in the cycle that a user discons at, it can cause errors here.
             except KeyError:
               address_book.remove(address)
-              queue_deletes.append(user_id)
+              queue_deletes.append(uid)
 
             players[uid].update(d)
             player_new = players[uid]
@@ -94,11 +94,11 @@ def main():
               if round(math.hypot(player_old['x'] - player_new['x'], player_old['y'] - player_new['y']), 4) > 3:
                 print('illegal movement. disregarding instruction.')
                 players[uid] = player_old
-                server.sendto(umsgpack.packb(player_old), address)
+                server.sendto(msgpack.packb(player_old), address)
             except KeyError:
               pass
 
-            broadcast(address, umsgpack.packb(players[uid]))
+            broadcast(address, msgpack.packb(players[uid]))
 
     for user_id, refresh_time in timeouts.items():
       if time.time() - refresh_time[0] > 30:
@@ -116,7 +116,7 @@ def main():
 
         players[item]['status'] = 'discon'
 
-        broadcast(None,umsgpack.packb(players[item]))
+        broadcast(None,msgpack.packb(players[item]))
         del players[item]
 
 def broadcast(address, message):
