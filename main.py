@@ -34,6 +34,8 @@ class Player(Widget):
   firing = False
   weapon = None
 
+  dmg = 0
+
   def __init__(self,*args,**kwargs):
     super(Player,self).__init__(*args,**kwargs)
 
@@ -99,6 +101,9 @@ class Content(Widget):
     self.mouse_pos = pos
 
   def on_touch_down(self, e):
+    self.mouse_pressed = self.mouse_pos
+
+  def on_touch_move(self, e):
     self.mouse_pressed = self.mouse_pos
 
   def on_touch_up(self, e):
@@ -195,6 +200,10 @@ class Content(Widget):
         if d['user'] == -1:
           self.user.x = d['x']
           self.user.y = d['y']
+
+          if d['dmg'] > self.user.dmg:
+            self.user.dmg = d['dmg']
+            print('we got hitted ', random.randint(0, 20))
 
         else:
           self.players[d['user']] = d

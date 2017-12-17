@@ -57,7 +57,7 @@ def main():
           elif address not in address_book: # if the token is new (new user connected)
             timeouts[plaintext[1:]] = [time.time(), address]
 
-            players[plaintext[1:]] = {'user' : str(i), 'status' : 'OK'}
+            players[plaintext[1:]] = {'user' : str(i), 'status' : 'OK', 'dmg' : 0}
             i += 1
             print('received player id {}'.format(plaintext))
             server.sendto(msgpack.packb([d for d in players.values() if d['user'] != str(i - 1)]), address) # this line sends all the current player data to the user on connect
@@ -84,6 +84,7 @@ def main():
             except KeyError:
               address_book.remove(address)
               queue_deletes.append(uid)
+              continue
 
             players[uid].update(d)
             player_new = players[uid]
@@ -99,23 +100,27 @@ def main():
               pass
 
             if players[uid]['fire']:
-              x = players[uid]['x']
-              y = players[uid]['y']
-              angles = []
-              for k in players.values():
-                if k is not players[uid]:
-                  e = [math.atan2(k['y'] - y + j, k['x'] - x + i) for i, j in [(0, 0), (0, 25), (25, 25), (25, 0)]]
-                  angles.append(
-                    [min(e), max(e)]
-                  )
-              firing_angle = math.atan2(players[uid]['fire'][1] - y, players[uid]['fire'][0] - x)
+              x = players[uid]['x'] + 12.5
+              y = players[uid]['y'] + 12.5
+              angles = {}
+              for k, v in players.items():
+                if v is not players[uid]:
+                  e = [math.degrees(math.atan2(v['y'] - y + j, v['x'] - x + i)) for i, j in [(0, 0), (0, 25), (25, 25), (25, 0)]]
+                  angles[k] = (min(e), max(e))
+              firing_angle = math.degrees(math.atan2(players[uid]['fire'][1] - y, players[uid]['fire'][0] - x))
 
-              print(firing_angle)
-              print(angles)
-
-              for angle in angles:
+              for player, angle in angles.items():
                 if angle[0] < firing_angle < angle[1]:
-                  print('thats a hit')
+                  players[player]['dmg'] += 1
+                  player_temp = players[player].copy()
+
+                  for k, v in timeouts.items():
+                    if k == player:
+                      addr = v[1]
+                      break
+
+                  player_temp['user'] = -1
+                  server.sendto(msgpack.packb(player_temp), addr) # send a damage report to the player hurt
 
             broadcast(address, msgpack.packb(players[uid]))
 
