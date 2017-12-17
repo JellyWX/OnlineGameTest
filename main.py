@@ -184,7 +184,7 @@ class Content(Widget):
 
     self.differences = {x: self.d[x] for x in self.d.keys() if x not in self.ex_d.keys() or self.d[x] != self.ex_d[x]}
 
-    if self.differences:
+    if self.differences or self.user.firing:
       self.differences['id'] = self.uuid
       self.differences['status'] = 'OK'
       self.client.send(msgpack.packb(self.differences))

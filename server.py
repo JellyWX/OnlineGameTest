@@ -96,8 +96,11 @@ def main():
                 print('illegal movement. disregarding instruction.')
                 players[uid] = player_old
                 server.sendto(msgpack.packb(player_old), address)
+                continue
             except KeyError:
               pass
+
+            print(players[uid]['fire'])
 
             if players[uid]['fire']:
               x = players[uid]['x'] + 12.5
