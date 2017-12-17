@@ -41,7 +41,7 @@ def main():
 
     for s in readable:
 
-      data, address = s.recvfrom(4096)
+      data, address = s.recvfrom(1024)
 
       if data:
         try:
@@ -99,8 +99,6 @@ def main():
                 continue
             except KeyError:
               pass
-
-            print(players[uid]['fire'])
 
             if players[uid]['fire']:
               x = players[uid]['x'] + 12.5

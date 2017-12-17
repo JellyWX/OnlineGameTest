@@ -192,7 +192,7 @@ class Content(Widget):
     readable, writable, exception = select.select([self.client], [], [], 0)
 
     if self.client in readable:
-      data_b = self.client.recv(4096)
+      data_b = self.client.recv(1024)
       d = msgpack.unpackb(data_b, encoding='utf8')
 
       if type(d) == dict:
