@@ -99,8 +99,8 @@ def main():
               pass
 
             if players[uid]['fire']:
-              x = players[uid]['fire'][0]
-              y = players[uid]['fire'][1]
+              x = players[uid]['x']
+              y = players[uid]['y']
               angles = []
               for k in players.values():
                 if k is not players[uid]:
@@ -108,8 +108,9 @@ def main():
                   angles.append(
                     [min(e), max(e)]
                   )
-              firing_angle = math.atan2(players[uid]['y'] - y, players[uid]['x'] - x)
+              firing_angle = math.atan2(players[uid]['fire'][1] - y, players[uid]['fire'][0] - x)
 
+              print(firing_angle)
               print(angles)
 
               for angle in angles:
